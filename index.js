@@ -43,10 +43,14 @@ function handleGame(id, msg) {
 
 // WEBHOOK
 app.post("/webhook", async (req, res) => {
+  console.log("MASUK WEBHOOK:", req.body);
+
   const sender = req.body.sender;
   const msg = req.body.message?.toLowerCase() || "";
 
   const reply = handleGame(sender, msg);
+
+  console.log("BALAS:", reply);
 
   await axios.post(
     "https://api.fonnte.com/send",
