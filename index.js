@@ -23,230 +23,234 @@ function saveDB(data) {
 }
 
 // GAME
+
 function handleGame(id, msg) {
   let db = loadDB();
 
   if (!db.users[id]) {
     db.users[id] = {
-      name: "Petani Desa",
-      level: 1,
-      exp: 0,
-      saldo: 100,
-      emas: 10,
-      energi: 10,
-      maxEnergi: 10,
-      lastKerja: 0,
-      lastPanen: 0,
-      lahan: [],
-      ternak: [],
-      inventory: {},
-      skill: {
-        farming: 1,
-        mining: 1,
-        fishing: 1
-      }
+      uang: 100,
+      energy: 100,
+      padi: 0,
+      ikan: 0,
+      ayam: 0,
+      sapi: 0,
+      telur: 0
     };
     saveDB(db);
-    return "🌾 Selamat datang di Harvest Moon: Back to Desa!\nKetik: menu";
+
+    return `🌅 *Selamat datang di Harvest Moon: Back To Desa*
+
+Kamu tiba di desa kecil...
+Udara segar... suara burung... kehidupan baru dimulai 🌾
+
+Ketik: menu`;
   }
 
-  let user = db.users[id];
-
-  // ===== REGENERASI ENERGI =====
-  if (user.energi < user.maxEnergi) {
-    user.energi += 1;
-  }
+  let u = db.users[id];
 
   // ===== MENU =====
   if (msg === "menu") {
-    return `🌾 HARVEST MOON MENU
+    return `🌾 *HARVEST MOON MENU*
 
 📊 info
 🌱 tanam
 🌾 panen
 🐄 ternak
 🎣 mancing
-⛏ tambang
 🍳 masak
 💼 kerja
 🛒 pasar
-🕶 gelap
-☢ event
-🎒 inv`;
+🕶️ gelap
+🎒 inv
+🌌 event`;
   }
 
   // ===== INFO =====
   if (msg === "info") {
-    return `📊 INFO PETANI
+    return `📊 *STATUS DESA*
 
-👤 ${user.name}
-⭐ Level: ${user.level} (${user.exp}/100)
-💰 Saldo: ${user.saldo}
-🥇 Emas: ${user.emas}
-⚡ Energi: ${user.energi}/${user.maxEnergi}
+💰 Uang: ${u.uang}
+⚡ Energy: ${u.energy}
 
-🌾 Lahan: ${user.lahan.length}/5
-🐄 Ternak: ${user.ternak.length}
-
-🎯 Skill:
-🌱 Farming: ${user.skill.farming}
-⛏ Mining: ${user.skill.mining}
-🎣 Fishing: ${user.skill.fishing}`;
+🌾 Padi: ${u.padi}
+🐟 Ikan: ${u.ikan}
+🐔 Ayam: ${u.ayam}
+🐄 Sapi: ${u.sapi}
+🥚 Telur: ${u.telur}`;
   }
 
   // ===== TANAM =====
-  if (msg.startsWith("tanam")) {
-    if (user.energi <= 0) return "❌ Energi habis";
+  if (msg === "tanam") {
+    if (u.energy < 10) return "⚡ Kamu terlalu lelah...";
 
-    let tanaman = msg.split(" ")[2];
-    if (!tanaman) return "Contoh: tanam padi";
-
-    user.lahan.push({ tanaman, waktu: Date.now() });
-    user.energi -= 1;
-
+    u.energy -= 10;
+    u.padi += 3;
     saveDB(db);
-    return `🌱 Menanam ${tanaman}`;
+
+    return `🌱 Kamu menanam di ladang...
+
+Tanah terasa hangat...
+🌾 +3 padi`;
   }
 
   // ===== PANEN =====
   if (msg === "panen") {
-    if (user.lahan.length === 0) return "❌ Tidak ada tanaman";
+    if (u.padi < 1) return "🌾 Tidak ada yang bisa dipanen";
 
-    let hasil = user.lahan.length * 30;
-    user.saldo += hasil;
-    user.exp += 20;
-    user.lahan = [];
-
-    if (user.exp >= 100) {
-      user.level++;
-      user.exp = 0;
-    }
-
+    let hasil = u.padi * 5;
+    u.uang += hasil;
+    u.padi = 0;
     saveDB(db);
-    return `🌾 Panen berhasil!\n💰 +${hasil}`;
-  }
 
-  // ===== KERJA =====
-  if (msg === "kerja") {
-    let now = Date.now();
-    if (now - user.lastKerja < 60000)
-      return "⏳ Tunggu 1 menit untuk kerja lagi";
+    return `🌾 Kamu memanen ladang...
 
-    let gaji = 50 + user.level * 10;
-    user.saldo += gaji;
-    user.lastKerja = now;
-
-    saveDB(db);
-    return `💼 Kamu bekerja\n💰 +${gaji}`;
-  }
-
-  // ===== MANCING =====
-  if (msg === "mancing") {
-    if (user.energi <= 0) return "❌ Energi habis";
-
-    let ikan = ["🐟 Lele", "🐠 Nila", "🐡 Tuna"];
-    let hasil = ikan[Math.floor(Math.random() * ikan.length)];
-
-    user.inventory[hasil] = (user.inventory[hasil] || 0) + 1;
-    user.skill.fishing += 1;
-    user.energi -= 1;
-
-    saveDB(db);
-    return `🎣 Kamu dapat ${hasil}`;
-  }
-
-  // ===== TAMBANG =====
-  if (msg === "tambang") {
-    if (user.energi <= 0) return "❌ Energi habis";
-
-    let item = ["🪨 Batu", "⛓ Besi", "💎 Diamond"];
-    let hasil = item[Math.floor(Math.random() * item.length)];
-
-    user.inventory[hasil] = (user.inventory[hasil] || 0) + 1;
-    user.skill.mining += 1;
-    user.energi -= 1;
-
-    saveDB(db);
-    return `⛏ Kamu dapat ${hasil}`;
+Hasil dijual ke pasar 💰
++${hasil}`;
   }
 
   // ===== TERNAK =====
   if (msg === "ternak") {
-    return `🐄 TERNAK
+    return `🐄 *KANDANG DESA*
+
+Angin sore berhembus...
+Hewan ternakmu menatap tenang 🐔🐄
 
 🐔 ayam - $20
-🐑 domba - $50
 🐄 sapi - $100
 
 Ketik:
-beli <hewan>`;
+beli ayam / beli sapi`;
   }
 
   if (msg.startsWith("beli")) {
-    let h = msg.split(" ")[2];
-    let harga = { ayam: 20, domba: 50, sapi: 100 };
+    let h = msg.split(" ")[1];
 
-    if (!harga[h]) return "❌ Tidak ada";
-    if (user.saldo < harga[h]) return "❌ Uang kurang";
+    if (h === "ayam") {
+      if (u.uang < 20) return "💸 Uang tidak cukup...";
+      u.ayam += 1;
+      u.uang -= 20;
+      saveDB(db);
 
-    user.saldo -= harga[h];
-    user.ternak.push({ jenis: h, lapar: false });
+      return "🐔 Seekor ayam kini tinggal di kandangmu...";
+    }
 
+    if (h === "sapi") {
+      if (u.uang < 100) return "💸 Uang tidak cukup...";
+      u.sapi += 1;
+      u.uang -= 100;
+      saveDB(db);
+
+      return "🐄 Sapi besar itu kini milikmu...";
+    }
+  }
+
+  // ===== MANCING =====
+  if (msg === "mancing") {
+    let hasil = ["lele", "ikan emas", "sepatu tua", "ikan langka ✨"];
+    let dapet = hasil[Math.floor(Math.random() * hasil.length)];
+
+    if (dapet === "sepatu tua") {
+      return "😅 Kamu menarik sesuatu... ternyata cuma sepatu tua...";
+    }
+
+    u.ikan += 1;
     saveDB(db);
-    return `🐾 Membeli ${h}`;
+
+    return `🎣 Air bergetar...
+
+🐟 Kamu mendapat ${dapet}`;
   }
 
   // ===== MASAK =====
   if (msg === "masak") {
-    return `🍳 RESEP
+    if (u.ikan < 1) return "🍳 Tidak ada bahan...";
+    u.ikan -= 1;
+    u.energy += 10;
+    saveDB(db);
 
-🥚 telur goreng
-🥩 steak
-🍲 sup
+    return "🍳 Kamu memasak ikan...\n⚡ Energy +10";
+  }
+
+  // ===== KERJA =====
+  if (msg === "kerja") {
+    if (u.energy < 15) return "⚡ Kamu kelelahan...";
+    u.energy -= 15;
+    u.uang += 50;
+    saveDB(db);
+
+    return "💼 Kamu bekerja di kota...\n💰 +50";
+  }
+
+  // ===== PASAR =====
+  if (msg === "pasar") {
+    return `🛒 *PASAR DESA*
+
+Orang-orang ramai berdagang...
 
 Ketik:
-desa masak <menu>`;
+jual ikan`;
+  }
+
+  if (msg === "jual ikan") {
+    if (u.ikan < 1) return "❌ Tidak ada ikan";
+
+    let uang = u.ikan * 10;
+    u.uang += uang;
+    u.ikan = 0;
+    saveDB(db);
+
+    return `💰 Ikan terjual semua!\n+${uang}`;
   }
 
   // ===== PASAR GELAP =====
   if (msg === "gelap") {
-    return `🕶 PASAR GELAP
+    return `🕶️ *PASAR GELAP*
 
-💣 Bom - 100 emas
-🧪 Elixir - 50 emas
-🗝 Kunci Misteri - 200 emas`;
-  }
+Tempat ini terasa... berbeda...
 
-  // ===== EVENT =====
-  if (msg === "event") {
-    return `☢ EVENT: UNDER THE DOME
+💣 item langka
+💰 harga mahal
 
-kubah misterius datang...
-
-Ketik:
-masuk`;
-  }
-
-  if (msg === "masuk") {
-    user.saldo += 200;
-    user.emas += 50;
-
-    saveDB(db);
-    return `☢ Kamu selamat!\n💰 +200\n🥇 +50`;
+(coming soon 😈)`;
   }
 
   // ===== INVENTORY =====
   if (msg === "inv") {
-    let inv = Object.entries(user.inventory)
-      .map(([k, v]) => `${k} x${v}`)
-      .join("\n");
+    return `🎒 INVENTORY
 
-    return `🎒 INVENTORY\n\n${inv || "Kosong"}`;
+🌾 ${u.padi}
+🐟 ${u.ikan}
+🐔 ${u.ayam}
+🐄 ${u.sapi}
+🥚 ${u.telur}`;
   }
 
-  return "❓ Tidak dikenal";
-           }
+  // ===== EVENT =====
+  if (msg === "event") {
+    return `🌌 *UNDER THE DOME*
 
+Langit berubah gelap...
+Kubus cahaya turun ke desa...
+
+Ketik:
+masuk / lari`;
+  }
+
+  if (msg === "masuk") {
+    let r = Math.random();
+
+    if (r < 0.5) {
+      u.uang += 200;
+      saveDB(db);
+      return "💰 Kamu menemukan harta tersembunyi! +200";
+    } else {
+      return "👻 Suara aneh... kamu lari ketakutan!";
+    }
+  }
+
+  return "❓ Perintah tidak dikenal...";
+}
 // WEBHOOK
 app.post("/webhook", async (req, res) => {
   console.log("MASUK WEBHOOK:", req.body);
