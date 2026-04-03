@@ -47,7 +47,7 @@ function handleGame(id, msg) {
       }
     };
     saveDB(db);
-    return "🌾 Selamat datang di Harvest Moon: Back to Desa!\nKetik: desa menu";
+    return "🌾 Selamat datang di Harvest Moon: Back to Desa!\nKetik: menu";
   }
 
   let user = db.users[id];
@@ -58,25 +58,25 @@ function handleGame(id, msg) {
   }
 
   // ===== MENU =====
-  if (msg === "desa menu") {
+  if (msg === "menu") {
     return `🌾 HARVEST MOON MENU
 
-📊 desa info
-🌱 desa tanam
-🌾 desa panen
-🐄 desa ternak
-🎣 desa mancing
-⛏ desa tambang
-🍳 desa masak
-💼 desa kerja
-🛒 desa pasar
-🕶 desa gelap
-☢ desa event
-🎒 desa inv`;
+📊 info
+🌱 tanam
+🌾 panen
+🐄 ternak
+🎣 mancing
+⛏ tambang
+🍳 masak
+💼 kerja
+🛒 pasar
+🕶 gelap
+☢ event
+🎒 inv`;
   }
 
   // ===== INFO =====
-  if (msg === "desa info") {
+  if (msg === "info") {
     return `📊 INFO PETANI
 
 👤 ${user.name}
@@ -95,11 +95,11 @@ function handleGame(id, msg) {
   }
 
   // ===== TANAM =====
-  if (msg.startsWith("desa tanam")) {
+  if (msg.startsWith("tanam")) {
     if (user.energi <= 0) return "❌ Energi habis";
 
     let tanaman = msg.split(" ")[2];
-    if (!tanaman) return "Contoh: desa tanam padi";
+    if (!tanaman) return "Contoh: tanam padi";
 
     user.lahan.push({ tanaman, waktu: Date.now() });
     user.energi -= 1;
@@ -109,7 +109,7 @@ function handleGame(id, msg) {
   }
 
   // ===== PANEN =====
-  if (msg === "desa panen") {
+  if (msg === "panen") {
     if (user.lahan.length === 0) return "❌ Tidak ada tanaman";
 
     let hasil = user.lahan.length * 30;
@@ -127,7 +127,7 @@ function handleGame(id, msg) {
   }
 
   // ===== KERJA =====
-  if (msg === "desa kerja") {
+  if (msg === "kerja") {
     let now = Date.now();
     if (now - user.lastKerja < 60000)
       return "⏳ Tunggu 1 menit untuk kerja lagi";
@@ -141,7 +141,7 @@ function handleGame(id, msg) {
   }
 
   // ===== MANCING =====
-  if (msg === "desa mancing") {
+  if (msg === "mancing") {
     if (user.energi <= 0) return "❌ Energi habis";
 
     let ikan = ["🐟 Lele", "🐠 Nila", "🐡 Tuna"];
@@ -156,7 +156,7 @@ function handleGame(id, msg) {
   }
 
   // ===== TAMBANG =====
-  if (msg === "desa tambang") {
+  if (msg === "tambang") {
     if (user.energi <= 0) return "❌ Energi habis";
 
     let item = ["🪨 Batu", "⛓ Besi", "💎 Diamond"];
@@ -171,7 +171,7 @@ function handleGame(id, msg) {
   }
 
   // ===== TERNAK =====
-  if (msg === "desa ternak") {
+  if (msg === "ternak") {
     return `🐄 TERNAK
 
 🐔 ayam - $20
@@ -179,10 +179,10 @@ function handleGame(id, msg) {
 🐄 sapi - $100
 
 Ketik:
-desa beli <hewan>`;
+beli <hewan>`;
   }
 
-  if (msg.startsWith("desa beli")) {
+  if (msg.startsWith("beli")) {
     let h = msg.split(" ")[2];
     let harga = { ayam: 20, domba: 50, sapi: 100 };
 
@@ -197,7 +197,7 @@ desa beli <hewan>`;
   }
 
   // ===== MASAK =====
-  if (msg === "desa masak") {
+  if (msg === "masak") {
     return `🍳 RESEP
 
 🥚 telur goreng
@@ -209,7 +209,7 @@ desa masak <menu>`;
   }
 
   // ===== PASAR GELAP =====
-  if (msg === "desa gelap") {
+  if (msg === "gelap") {
     return `🕶 PASAR GELAP
 
 💣 Bom - 100 emas
@@ -218,16 +218,16 @@ desa masak <menu>`;
   }
 
   // ===== EVENT =====
-  if (msg === "desa event") {
+  if (msg === "event") {
     return `☢ EVENT: UNDER THE DOME
 
-Kabut misterius datang...
+kubah misterius datang...
 
 Ketik:
-desa masuk`;
+masuk`;
   }
 
-  if (msg === "desa masuk") {
+  if (msg === "masuk") {
     user.saldo += 200;
     user.emas += 50;
 
@@ -236,7 +236,7 @@ desa masuk`;
   }
 
   // ===== INVENTORY =====
-  if (msg === "desa inv") {
+  if (msg === "inv") {
     let inv = Object.entries(user.inventory)
       .map(([k, v]) => `${k} x${v}`)
       .join("\n");
