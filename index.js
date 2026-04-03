@@ -1,28 +1,28 @@
 const express = require("express");
-const fs = require("fs");
 const axios = require("axios");
+const fs = require("fs");
 
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 const TOKEN = "Sqk8EcTS2CB5f4jXNLQh";
 
-// ===== DATABASE =====
+// DB
 const DB = "./db.json";
 
 function loadDB() {
   if (!fs.existsSync(DB)) {
-    fs.writeFileSync(DB, JSON.stringify({ users: {} }, null, 2));
+    fs.writeFileSync(DB, JSON.stringify({ users: {} }));
   }
   return JSON.parse(fs.readFileSync(DB));
 }
 
 function saveDB(data) {
-  fs.writeFileSync(DB, JSON.stringify(data, null, 2));
+  fs.writeFileSync(DB, JSON.stringify(data));
 }
 
-// ===== GAME =====
+// GAME
 function handleGame(id, msg) {
   let db = loadDB();
 
@@ -32,11 +32,19 @@ function handleGame(id, msg) {
       level: 1,
       exp: 0,
       saldo: 100,
+      emas: 10,
       energi: 10,
+      maxEnergi: 10,
       lastKerja: 0,
+      lastPanen: 0,
       lahan: [],
       ternak: [],
-      inventory: {}
+      inventory: {},
+      skill: {
+        farming: 1,
+        mining: 1,
+        fishing: 1
+      }
     };
     saveDB(db);
     return "🌾 Selamat datang di Harvest Moon: Back to Desa!\nKetik: desa menu";
@@ -44,55 +52,59 @@ function handleGame(id, msg) {
 
   let user = db.users[id];
 
+  // ===== REGENERASI ENERGI =====
+  if (user.energi < user.maxEnergi) {
+    user.energi += 1;
+  }
+
   // ===== MENU =====
   if (msg === "desa menu") {
-    return `🌾 MENU
+    return `🌾 HARVEST MOON MENU
 
-desa info
-desa pasar
-desa tanam <nama>
-desa panen
-desa kerja
-desa ternak
-desa inv
-desa top`;
+📊 desa info
+🌱 desa tanam
+🌾 desa panen
+🐄 desa ternak
+🎣 desa mancing
+⛏ desa tambang
+🍳 desa masak
+💼 desa kerja
+🛒 desa pasar
+🕶 desa gelap
+☢ desa event
+🎒 desa inv`;
   }
 
   // ===== INFO =====
   if (msg === "desa info") {
-    return `📊 INFO
+    return `📊 INFO PETANI
 
 👤 ${user.name}
-⭐ Level: ${user.level}
+⭐ Level: ${user.level} (${user.exp}/100)
 💰 Saldo: ${user.saldo}
-⚡ Energi: ${user.energi}
+🥇 Emas: ${user.emas}
+⚡ Energi: ${user.energi}/${user.maxEnergi}
 
 🌾 Lahan: ${user.lahan.length}/5
-🐄 Ternak: ${user.ternak.length}`;
-  }
+🐄 Ternak: ${user.ternak.length}
 
-  // ===== PASAR =====
-  if (msg === "desa pasar") {
-    return `🛒 PASAR
-
-🌽 jagung
-🍅 tomat
-🥕 wortel
-
-Ketik:
-desa tanam <nama>`;
+🎯 Skill:
+🌱 Farming: ${user.skill.farming}
+⛏ Mining: ${user.skill.mining}
+🎣 Fishing: ${user.skill.fishing}`;
   }
 
   // ===== TANAM =====
   if (msg.startsWith("desa tanam")) {
-    let tanaman = msg.split(" ")[2];
+    if (user.energi <= 0) return "❌ Energi habis";
 
-    if (!tanaman) return "❌ Contoh: desa tanam jagung";
-    if (user.lahan.length >= 5) return "❌ Lahan penuh";
+    let tanaman = msg.split(" ")[2];
+    if (!tanaman) return "Contoh: desa tanam padi";
 
     user.lahan.push({ tanaman, waktu: Date.now() });
-    saveDB(db);
+    user.energi -= 1;
 
+    saveDB(db);
     return `🌱 Menanam ${tanaman}`;
   }
 
@@ -100,37 +112,71 @@ desa tanam <nama>`;
   if (msg === "desa panen") {
     if (user.lahan.length === 0) return "❌ Tidak ada tanaman";
 
-    let hasil = user.lahan.length * 20;
+    let hasil = user.lahan.length * 30;
     user.saldo += hasil;
+    user.exp += 20;
     user.lahan = [];
 
-    saveDB(db);
+    if (user.exp >= 100) {
+      user.level++;
+      user.exp = 0;
+    }
 
-    return `🌾 Panen +${hasil}`;
+    saveDB(db);
+    return `🌾 Panen berhasil!\n💰 +${hasil}`;
   }
 
   // ===== KERJA =====
   if (msg === "desa kerja") {
     let now = Date.now();
-
     if (now - user.lastKerja < 60000)
-      return "⏳ Tunggu 1 menit";
+      return "⏳ Tunggu 1 menit untuk kerja lagi";
 
-    let gaji = 50;
+    let gaji = 50 + user.level * 10;
     user.saldo += gaji;
     user.lastKerja = now;
 
     saveDB(db);
-    return `💼 Kerja +${gaji}`;
+    return `💼 Kamu bekerja\n💰 +${gaji}`;
+  }
+
+  // ===== MANCING =====
+  if (msg === "desa mancing") {
+    if (user.energi <= 0) return "❌ Energi habis";
+
+    let ikan = ["🐟 Lele", "🐠 Nila", "🐡 Tuna"];
+    let hasil = ikan[Math.floor(Math.random() * ikan.length)];
+
+    user.inventory[hasil] = (user.inventory[hasil] || 0) + 1;
+    user.skill.fishing += 1;
+    user.energi -= 1;
+
+    saveDB(db);
+    return `🎣 Kamu dapat ${hasil}`;
+  }
+
+  // ===== TAMBANG =====
+  if (msg === "desa tambang") {
+    if (user.energi <= 0) return "❌ Energi habis";
+
+    let item = ["🪨 Batu", "⛓ Besi", "💎 Diamond"];
+    let hasil = item[Math.floor(Math.random() * item.length)];
+
+    user.inventory[hasil] = (user.inventory[hasil] || 0) + 1;
+    user.skill.mining += 1;
+    user.energi -= 1;
+
+    saveDB(db);
+    return `⛏ Kamu dapat ${hasil}`;
   }
 
   // ===== TERNAK =====
   if (msg === "desa ternak") {
     return `🐄 TERNAK
 
-🐔 ayam - 20
-🐑 domba - 50
-🐄 sapi - 100
+🐔 ayam - $20
+🐑 domba - $50
+🐄 sapi - $100
 
 Ketik:
 desa beli <hewan>`;
@@ -138,50 +184,79 @@ desa beli <hewan>`;
 
   if (msg.startsWith("desa beli")) {
     let h = msg.split(" ")[2];
-
     let harga = { ayam: 20, domba: 50, sapi: 100 };
 
     if (!harga[h]) return "❌ Tidak ada";
     if (user.saldo < harga[h]) return "❌ Uang kurang";
 
     user.saldo -= harga[h];
-    user.ternak.push(h);
+    user.ternak.push({ jenis: h, lapar: false });
 
     saveDB(db);
     return `🐾 Membeli ${h}`;
   }
 
-  // ===== INVENTORY =====
-  if (msg === "desa inv") {
-    return `🎒 INVENTORY
+  // ===== MASAK =====
+  if (msg === "desa masak") {
+    return `🍳 RESEP
 
-💰 ${user.saldo}
-🐄 Ternak: ${user.ternak.length}`;
+🥚 telur goreng
+🥩 steak
+🍲 sup
+
+Ketik:
+desa masak <menu>`;
   }
 
-  // ===== LEADERBOARD =====
-  if (msg === "desa top") {
-    let top = Object.entries(db.users)
-      .sort((a, b) => b[1].saldo - a[1].saldo)
-      .slice(0, 5);
+  // ===== PASAR GELAP =====
+  if (msg === "desa gelap") {
+    return `🕶 PASAR GELAP
 
-    let teks = "🏆 TOP PLAYER\n\n";
-    top.forEach((u, i) => {
-      teks += `${i + 1}. ${u[1].name} - ${u[1].saldo}\n`;
-    });
+💣 Bom - 100 emas
+🧪 Elixir - 50 emas
+🗝 Kunci Misteri - 200 emas`;
+  }
 
-    return teks;
+  // ===== EVENT =====
+  if (msg === "desa event") {
+    return `☢ EVENT: UNDER THE DOME
+
+Kabut misterius datang...
+
+Ketik:
+desa masuk`;
+  }
+
+  if (msg === "desa masuk") {
+    user.saldo += 200;
+    user.emas += 50;
+
+    saveDB(db);
+    return `☢ Kamu selamat!\n💰 +200\n🥇 +50`;
+  }
+
+  // ===== INVENTORY =====
+  if (msg === "desa inv") {
+    let inv = Object.entries(user.inventory)
+      .map(([k, v]) => `${k} x${v}`)
+      .join("\n");
+
+    return `🎒 INVENTORY\n\n${inv || "Kosong"}`;
   }
 
   return "❓ Tidak dikenal";
-}
+           }
 
-// ===== WEBHOOK =====
+// WEBHOOK
 app.post("/webhook", async (req, res) => {
+  console.log("MASUK WEBHOOK:", req.body);
+
   const sender = req.body.sender;
   const msg = req.body.message?.toLowerCase() || "";
 
   const reply = handleGame(sender, msg);
+
+  console.log("BALAS:", reply);
 
   await axios.post(
     "https://api.fonnte.com/send",
@@ -199,9 +274,11 @@ app.post("/webhook", async (req, res) => {
   res.send("OK");
 });
 
-// ===== ROOT =====
+// ROOT
 app.get("/", (req, res) => {
-  res.send("🌾 HARVEST MOON BOT AKTIF");
+  res.send("BOT AKTIF 🔥");
 });
 
-app.listen(PORT, () => console.log("Server jalan"));
+app.listen(PORT, () => {
+  console.log("Server jalan");
+});
