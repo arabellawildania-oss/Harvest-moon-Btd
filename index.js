@@ -6,7 +6,7 @@ const app = express();
 app.use(express.json());
 
 const PORT = 3000;
-const TOKEN = "";
+const TOKEN = "Sqk8EcTS2CB5f4jXNLQh";
 
 // DB
 const DB = "./db.json";
